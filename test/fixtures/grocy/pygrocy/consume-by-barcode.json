@@ -1,0 +1,37 @@
+{
+  "source": "pygrocy test/cassettes/test_grocy/TestGrocy.test_consume_product_by_barcode_valid.yaml",
+  "method": "POST",
+  "path": "/api/stock/products/by-barcode/42141099/consume",
+  "request": {
+    "amount": 1,
+    "spoiled": false,
+    "transaction_type": "consume"
+  },
+  "status": 200,
+  "body": [
+    {
+      "id": "81",
+      "product_id": "4",
+      "amount": "-1",
+      "best_before_date": "2019-05-04",
+      "purchased_date": "2022-04-22",
+      "used_date": "2022-04-22",
+      "spoiled": "0",
+      "stock_id": "626269f04c68f",
+      "transaction_type": "consume",
+      "price": "5",
+      "undone": "0",
+      "undone_timestamp": null,
+      "opened_date": null,
+      "location_id": "4",
+      "recipe_id": null,
+      "correlation_id": null,
+      "transaction_id": "626269f09f853",
+      "stock_row_id": null,
+      "shopping_location_id": null,
+      "user_id": "1",
+      "row_created_timestamp": "2022-04-22 08:40:16",
+      "note": null
+    }
+  ]
+}

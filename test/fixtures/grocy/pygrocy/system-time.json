@@ -1,0 +1,15 @@
+{
+  "source": "pygrocy test/cassettes/test_system/TestSystem.test_get_system_time_valid.yaml",
+  "method": "GET",
+  "path": "/api/system/time",
+  "request": null,
+  "status": 200,
+  "body": {
+    "timezone": "UTC",
+    "time_local": "2022-07-24 16:18:25",
+    "time_local_sqlite3": "2022-07-24 16:18:25",
+    "time_utc": "2022-07-24 16:18:25",
+    "timestamp": 1658679505,
+    "offset": 0
+  }
+}

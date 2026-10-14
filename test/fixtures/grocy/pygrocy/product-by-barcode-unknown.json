@@ -1,0 +1,10 @@
+{
+  "source": "pygrocy test/cassettes/test_product/TestProduct.test_product_by_barcode_get_details_non_existant.yaml",
+  "method": "GET",
+  "path": "/api/stock/products/by-barcode/200",
+  "request": null,
+  "status": 400,
+  "body": {
+    "error_message": "No product with barcode 200 found"
+  }
+}

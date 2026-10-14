@@ -1,0 +1,33 @@
+{
+  "source": "pygrocy test/cassettes/test_battery/TestBattery.test_get_batteries_valid.yaml",
+  "method": "GET",
+  "path": "/api/batteries",
+  "request": null,
+  "status": 200,
+  "body": [
+    {
+      "id": "1",
+      "battery_id": "1",
+      "last_tracked_time": "2021-10-24 23:59:59",
+      "next_estimated_charge_time": "2022-04-22 23:59:59"
+    },
+    {
+      "id": "2",
+      "battery_id": "2",
+      "last_tracked_time": "2022-03-03 09:38:06",
+      "next_estimated_charge_time": "2999-12-31 23:59:59"
+    },
+    {
+      "id": "3",
+      "battery_id": "3",
+      "last_tracked_time": "2022-02-16 09:38:06",
+      "next_estimated_charge_time": "2022-04-17 09:38:06"
+    },
+    {
+      "id": "4",
+      "battery_id": "4",
+      "last_tracked_time": "2022-02-25 09:38:06",
+      "next_estimated_charge_time": "2022-04-26 09:38:06"
+    }
+  ]
+}

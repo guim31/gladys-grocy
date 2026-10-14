@@ -1,61 +1,166 @@
-# Demo Devices Template
+# Grocy
 
-This is the user documentation of the integration. Gladys re-hosts this file
-and shows a permanent **Documentation** link to it in the Configuration screen
-(in the user's language, with English as the fallback) — it is when
-configuring that the user needs it most. Keep the short onboarding hints in
-the `section` blocks of the manifest `config_schema`; put the long
-step-by-step (screenshots, troubleshooting…) here.
+Bring [Grocy](https://grocy.info), the self-hosted "ERP beyond your fridge",
+into Gladys over your local network: what must be eaten first, the chores of
+the day, the shopping list and the batteries to charge, on the dashboard and in
+your scenes. A button, a presence or the robot vacuum can then tell Grocy what
+happened: a product consumed, an item to buy, a chore done, a battery charged.
 
-## What you get
+> **Developed without the hardware: feedback welcome.** This integration was
+> built and tested against the answers documented by Grocy (its OpenAPI
+> specification) and real answers of a Grocy recorded by the pygrocy library,
+> not against a running Grocy. If something does not work as described, please
+> say so on the [Gladys forum](https://community.gladysassistant.com) or in the
+> [issues](https://github.com/guim31/gladys-grocy/issues).
 
-Six demo devices show up after installation: a weather station (real data
-from Open-Meteo), a switch, a dimmable light, a smart plug with power
-metering, a motion sensor and a camera.
+## What you need
 
-## Configuration
+- Gladys Assistant 5.2.0 or later.
+- **Grocy** 3.3 or later (Grocy 4 recommended), reachable from Gladys: on a
+  NAS, a Raspberry Pi, Docker, Unraid, Proxmox, or the Home Assistant add-on
+  if its port is published.
+- An **API key** of Grocy. Open Grocy, click your user name (top right) →
+  **Manage API keys** → **Add**, and copy the key. The integration acts as the
+  user who owns the key: chores it marks as done are done by that user.
 
-1. Open the **Configuration** tab of the integration.
-2. Set the **latitude** and **longitude** the demo weather station should
-   observe (they default to Paris), and pick your temperature unit.
-   The **refresh interval** sets how often the weather station and the
-   plug's power are read: every 5 minutes by default, every minute at most.
-3. Save: the devices appear in the **Discovery** tab, ready to be added.
+## Set up
 
-The **Prefer the local connection** toggle drives the demo plug: it reports
-the channel it actually uses as a badge (local or cloud), with an orange dot
-when it runs degraded (local refused, cloud fallback).
+1. Install the integration from the Gladys catalog.
+2. In **Configuration**, enter the **Grocy address**, the one you open Grocy
+   with, for example `http://192.168.1.10:9283`. If Grocy runs in a
+   sub-directory (`https://nas.example.com/grocy`), keep it. Paste the **API
+   key**.
+3. HTTPS with a certificate of your own (NAS, reverse proxy)? Tick **Accept
+   self-signed certificates**.
+4. Optionally adjust the **Due soon: within (days)** window (5 by default, like
+   Grocy), the **Shopping list number** (1 is Grocy's default list), the
+   **Refresh interval** and the **Language of the feature names**.
+5. Save, then click **Test the connection**: the message under the button gives
+   the version of Grocy and what is due.
+6. Open the **Discover** tab: the device **Grocy** is listed. Click **Add**.
 
-## Actions
+## The Grocy device
 
-- **Test the weather provider** — performs a live request to Open-Meteo and
-  shows the current temperature and humidity under the button.
-- **Identify a device** — pick one of your devices in the list and it will
-  signal itself (the demo light "blinks" in the logs).
+One device for your Grocy, with counters (numbers, with history), each one
+matching what Grocy shows in red or orange:
+
+| Feature                   | What it counts                                                                |
+| ------------------------- | ----------------------------------------------------------------------------- |
+| Products due soon         | Products whose date falls within the "due soon" window, today included        |
+| Products past best-before | Products past their best-before date ("best before": often still fine)        |
+| Expired products          | Products past their expiration date ("use by": to throw away)                 |
+| Products below min. stock | Products below the minimum stock amount set in Grocy                          |
+| Shopping list items       | Items not yet bought on the chosen shopping list                              |
+| Chores due today          | Chores planned later today                                                    |
+| Overdue chores            | Chores whose planned time has passed                                          |
+| Batteries to charge       | Batteries to charge today or already late (only those with a charge interval) |
+| Tasks due today           | Open tasks due today                                                          |
+| Overdue tasks             | Open tasks whose due date has passed                                          |
+
+The feature names are set when the device is added, in the language of the
+configuration. Use them in scenes with the usual Gladys trigger "a device
+value changes" (for example _Overdue chores_ above 0 at 8 pm).
+
+## Dashboard widgets
+
+Add them from the dashboard editor, under the integration:
+
+- **Eat first**: the expired products, then those past their best-before date,
+  then those due soon, with their amount and date.
+- **To do today**: overdue and today's chores and tasks, and the batteries to
+  charge, the late ones first. The first four have a button with their name:
+  one tap marks the chore as done, the task as completed or the battery as
+  charged in Grocy.
+- **Shopping list**: the items to buy, and two buttons. **Add missing
+  products** puts the products below their minimum stock on the list. **Add…**
+  opens a small form: a product or any text, and an amount.
 
 ## Scenes
 
-The integration adds its own cards to the scene editor (Gladys 5.1 or
-later), under the **Integrations** category:
+### Triggers
 
-- **Motion detected** (trigger) — starts the scene when a demo motion sensor
-  sees something move. Optionally pick the sensor and what moved (person,
-  animal); left empty, any detection matches. The following actions can
-  read what moved with `{{triggerEvent.data.target}}`.
-- **Identify a device** (action) — makes the chosen device signal itself.
-  It returns whether the device could signal itself, so the following
-  actions can depend on it.
+- **A product is about to expire**: fired once per product and date, when the
+  product becomes due soon, then again when its date has passed. Filters: the
+  exact Grocy name of the product (empty: any), and when (_Due soon_,
+  _Best-before date passed_, _Expired (use-by date passed)_). Information passed
+  to the scene: product, date, days left (negative once past), amount in stock.
+- **A chore is overdue**: fired when the planned time of a chore passes without
+  it being done. Filters: the exact Grocy name of the chore and the Grocy user
+  it is assigned to (empty: any). Information passed to the scene: chore,
+  assigned to, planned time.
 
-## Dashboard
+What is already due when the integration starts for the first time is taken
+as known: only what becomes due afterwards fires the triggers. What was
+announced is kept in the integration's data, so a restart does not announce it
+again.
 
-Add the **Demo status** widget to a dashboard: it shows the live
-temperature of the weather station and the power of the office plug, the
-connection the plug currently uses (orange when degraded) and the observed
-location. Its **Identify the light** button makes the demo light signal
-itself.
+### Actions
+
+- **Consume a Grocy product**: removes an amount from the stock. The product is
+  found by its name (case and accents aside; a part of the name is enough when
+  only one product contains it) or by its barcode. Tick _Thrown away (spoiled)_
+  to record it as wasted. Returns the product, the amount consumed and the
+  amount left in stock.
+- **Add to the Grocy shopping list**: the product of that exact name, or a free
+  text line when no product has it (never another product). Optional note.
+  Returns the item, whether it is a known product, and the number of items on
+  the list.
+- **Mark a Grocy chore as done**: tracks an execution of the chore now. Returns
+  the chore and its next planned time.
+- **Mark a Grocy battery as charged**: tracks a charge cycle now. Returns the
+  battery and its next charge.
+
+Each action is undone from Grocy itself (stock journal, chore and battery
+journals, shopping list). Nothing is ever deleted.
+
+### Scene ideas
+
+- The robot vacuum goes back to its dock → **Mark a Grocy chore as done**
+  "Vacuum the living room floor".
+- **A product is about to expire**, when _Expired (use-by date passed)_ →
+  send "Throw away the {{product}}" to the family.
+- Every evening at 8 pm, if _Overdue chores_ is above 0 → a message with the
+  _To do today_ list on the dashboard of the kitchen tablet.
+- A button by the fridge → **Add to the Grocy shopping list** "Milk".
+
+## How often Grocy is read
+
+At each refresh (every minute by default), the integration asks Grocy one
+small question: has the database changed? Everything is read again only when it
+has, when the day changes, and every 15 minutes; in between, what is due is
+recomputed from the last reading and the clock of Grocy. A command (an action,
+a button) reads Grocy right after. Grocy sets no request quota; this keeps the
+load of a NAS negligible. The counters are sent to Gladys only when they
+change, and once every 6 hours otherwise.
 
 ## Troubleshooting
 
-The integration logs everything it does: check the integration logs from the
-Gladys UI (or `docker logs` on the host) with `LOG_LEVEL=debug` for the full
-detail.
+- **"API key refused"**: the key was deleted or mistyped. Create a new one in
+  Grocy (**Manage API keys**) and paste it again.
+- **"Grocy does not answer"**: check the address and the port from a browser
+  on the same network as Gladys. In Docker, `localhost` is the container of
+  the integration, not your server: use the IP address of the server.
+- **"No Grocy API at this address"**: the address opens something else than
+  Grocy (a NAS page, a reverse proxy), or misses the sub-directory of Grocy.
+- **"Certificate refused"**: tick **Accept self-signed certificates**.
+- **"The address redirects"**: enter the `https://` address directly.
+- **A name is not found** in an action: type the name as Grocy shows it, or a
+  unique part of it; a barcode works for products.
+- **A day starts at the wrong time**: the integration uses the clock of Grocy
+  (`/api/system/time`). Check the time zone of the server running Grocy.
+- Detailed logs: set the `LOG_LEVEL` variable of the container to `debug`. The
+  API key never appears in the logs.
+
+## Limits
+
+- Developed without a running Grocy: built on Grocy's specification and on
+  answers recorded from a real Grocy.
+- One Grocy per Gladys. One shopping list (chosen in the configuration).
+- The names of products and chores are typed in the scenes: Gladys cannot list
+  them in a menu.
+- The widget buttons and the counters act for the user who owns the API key.
+- Amounts in actions are whole numbers, in the stock unit of the product.
+- Recipes, meal plans and equipment are not covered.
+
+Grocy is a trademark of its authors. This integration is not affiliated with
+the Grocy project.
