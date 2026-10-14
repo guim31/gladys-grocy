@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-10-14
+
 ### Added
 
 - One Gladys device for your Grocy (3.3 or later, over HTTP or HTTPS, with an
@@ -30,4 +32,5 @@ the notes of the version's GitHub Release.
   request when nothing changed; the counters are sent only when they change.
 - Documentation in English, French, German and Spanish.
 
-[Unreleased]: https://github.com/guim31/gladys-grocy/commits/main
+[Unreleased]: https://github.com/guim31/gladys-grocy/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/guim31/gladys-grocy/releases/tag/v1.0.1
