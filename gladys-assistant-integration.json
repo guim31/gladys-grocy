@@ -1,177 +1,745 @@
 {
   "manifest_version": 1,
   "type": "device",
-  "name": "Demo Devices Template",
+  "name": "Grocy",
   "description": {
-    "en": "Starter template showing sensors, a switch, a dimmable light and a smart plug.",
-    "fr": "Template de démarrage : capteurs, interrupteur, lampe variable et prise connectée."
+    "en": "Link Gladys with Grocy: food to eat first, chores of the day, shopping list, batteries.",
+    "fr": "Reliez Gladys à Grocy : aliments à consommer, tâches ménagères du jour, courses, piles.",
+    "de": "Verbinde Gladys mit Grocy: bald fällige Lebensmittel, Hausarbeiten, Einkaufszettel, Batterien.",
+    "es": "Conecte Gladys a Grocy: alimentos por consumir, tareas del hogar, lista de la compra, baterías."
   },
   "version": "1.0.0",
-  "docker_image": "ghcr.io/gladysassistant/integration-template-js:1.0.0",
-  "gladys_version": ">=5.1.0",
-  "cover_image": "https://raw.githubusercontent.com/GladysAssistant/integration-template-js/master/cover.png",
-  "categories": ["lighting", "security", "environment"],
-  "transports": ["local", "cloud"],
+  "docker_image": "ghcr.io/guim31/gladys-grocy:1.0.0",
+  "gladys_version": ">=5.2.0",
+  "cover_image": "https://raw.githubusercontent.com/guim31/gladys-grocy/main/cover.png",
+  "categories": ["services"],
+  "transports": ["local"],
   "config_schema": [
     {
       "key": "intro",
       "type": "section",
-      "label": { "en": "Getting started", "fr": "Pour commencer" },
+      "label": {
+        "en": "Grocy connection",
+        "fr": "Connexion à Grocy",
+        "de": "Verbindung zu Grocy",
+        "es": "Conexión a Grocy"
+      },
       "description": {
-        "en": "The demo weather station reads real data from the free Open-Meteo API: pick the coordinates to observe. No account, no API key.",
-        "fr": "La station météo de démonstration lit de vraies données via l'API gratuite Open-Meteo : choisissez les coordonnées à observer. Pas de compte, pas de clé d'API."
+        "en": "The address is the one you open Grocy with, e.g. http://192.168.1.10:9283. Create an API key in Grocy: user menu (top right) → Manage API keys → Add.",
+        "fr": "L'adresse est celle avec laquelle vous ouvrez Grocy, ex. http://192.168.1.10:9283. Créez une clé d'API dans Grocy : menu utilisateur (en haut à droite) → Gérer les clefs API → Ajouter.",
+        "de": "Die Adresse ist die, mit der du Grocy öffnest, z. B. http://192.168.1.10:9283. Erstelle einen API-Schlüssel in Grocy: Benutzermenü (oben rechts) → API-Schlüssel verwalten → Hinzufügen.",
+        "es": "La dirección es la que usa para abrir Grocy, p. ej. http://192.168.1.10:9283. Cree una clave de API en Grocy: menú de usuario (arriba a la derecha) → Administrar las claves de API → Añadir."
       },
       "links": [
         {
-          "url": "https://open-meteo.com/en/docs",
-          "label": { "en": "Open-Meteo documentation", "fr": "Documentation Open-Meteo" }
+          "url": "https://grocy.info",
+          "label": {
+            "en": "Grocy website",
+            "fr": "Site de Grocy",
+            "de": "Website von Grocy",
+            "es": "Sitio web de Grocy"
+          }
+        },
+        {
+          "url": "https://demo.grocy.info/api",
+          "label": {
+            "en": "Grocy API documentation",
+            "fr": "Documentation de l'API Grocy",
+            "de": "Dokumentation der Grocy-API",
+            "es": "Documentación de la API de Grocy"
+          }
         }
       ]
     },
     {
-      "key": "latitude",
-      "type": "number",
-      "label": { "en": "Latitude", "fr": "Latitude" },
-      "description": {
-        "en": "Latitude used for the demo weather sensor.",
-        "fr": "Latitude utilisée par le capteur météo de démonstration."
+      "key": "grocy_url",
+      "type": "string",
+      "label": {
+        "en": "Grocy address",
+        "fr": "Adresse de Grocy",
+        "de": "Adresse von Grocy",
+        "es": "Dirección de Grocy"
       },
-      "placeholder": { "en": "e.g. 48.8566", "fr": "ex. 48.8566" },
-      "required": true,
-      "default": 48.8566,
-      "min": -90,
-      "max": 90
+      "description": {
+        "en": "With the port, and the sub-directory if Grocy runs in one.",
+        "fr": "Avec le port, et le sous-dossier si Grocy est servi dans un sous-dossier.",
+        "de": "Mit dem Port und dem Unterverzeichnis, falls Grocy in einem läuft.",
+        "es": "Con el puerto, y el subdirectorio si Grocy se sirve en uno."
+      },
+      "placeholder": {
+        "en": "e.g. http://192.168.1.10:9283",
+        "fr": "ex. http://192.168.1.10:9283",
+        "de": "z. B. http://192.168.1.10:9283",
+        "es": "p. ej. http://192.168.1.10:9283"
+      },
+      "required": true
     },
     {
-      "key": "longitude",
-      "type": "number",
-      "label": { "en": "Longitude", "fr": "Longitude" },
-      "description": {
-        "en": "Longitude used for the demo weather sensor.",
-        "fr": "Longitude utilisée par le capteur météo de démonstration."
+      "key": "api_key",
+      "type": "secret",
+      "label": {
+        "en": "API key",
+        "fr": "Clé d'API",
+        "de": "API-Schlüssel",
+        "es": "Clave de API"
       },
-      "placeholder": { "en": "e.g. 2.3522", "fr": "ex. 2.3522" },
-      "required": true,
-      "default": 2.3522,
-      "min": -180,
-      "max": 180
+      "description": {
+        "en": "Kept in Gladys, never written in the logs.",
+        "fr": "Gardée dans Gladys, jamais écrite dans les logs.",
+        "de": "Bleibt in Gladys, wird nie in die Protokolle geschrieben.",
+        "es": "Se guarda en Gladys, nunca se escribe en los registros."
+      },
+      "required": true
     },
     {
-      "key": "unit",
-      "type": "select",
-      "label": { "en": "Temperature unit", "fr": "Unité de température" },
+      "key": "allow_self_signed",
+      "type": "boolean",
+      "label": {
+        "en": "Accept self-signed certificates",
+        "fr": "Accepter les certificats auto-signés",
+        "de": "Selbstsignierte Zertifikate akzeptieren",
+        "es": "Aceptar certificados autofirmados"
+      },
+      "description": {
+        "en": "For an https:// address served with a certificate of your own (NAS, reverse proxy).",
+        "fr": "Pour une adresse en https:// servie avec votre propre certificat (NAS, proxy inverse).",
+        "de": "Für eine https://-Adresse mit eigenem Zertifikat (NAS, Reverse-Proxy).",
+        "es": "Para una dirección https:// servida con su propio certificado (NAS, proxy inverso)."
+      },
       "required": false,
-      "default": "celsius",
+      "default": false
+    },
+    {
+      "key": "lists_section",
+      "type": "section",
+      "label": {
+        "en": "Lists and refresh",
+        "fr": "Listes et rafraîchissement",
+        "de": "Listen und Aktualisierung",
+        "es": "Listas y actualización"
+      },
+      "description": {
+        "en": "Each refresh asks Grocy one small question (has the database changed?); everything is read again only when it has, and every 15 minutes.",
+        "fr": "Chaque rafraîchissement pose une seule petite question à Grocy (la base a-t-elle changé ?) ; tout est relu seulement si c'est le cas, et toutes les 15 minutes.",
+        "de": "Jede Aktualisierung stellt Grocy nur eine kleine Frage (hat sich die Datenbank geändert?); alles wird nur dann neu gelesen, und alle 15 Minuten.",
+        "es": "Cada actualización hace a Grocy una sola pregunta (¿ha cambiado la base de datos?); todo se vuelve a leer solo si es así, y cada 15 minutos."
+      }
+    },
+    {
+      "key": "due_soon_days",
+      "type": "number",
+      "label": {
+        "en": "Due soon: within (days)",
+        "fr": "Bientôt périmé : sous (jours)",
+        "de": "Bald fällig: innerhalb von (Tagen)",
+        "es": "Fecha próxima: dentro de (días)"
+      },
+      "description": {
+        "en": "A product counts as due soon when its date falls within this many days (Grocy's default: 5).",
+        "fr": "Un produit est bientôt périmé quand sa date tombe dans ce nombre de jours (5 par défaut dans Grocy).",
+        "de": "Ein Produkt gilt als bald fällig, wenn sein Datum in so vielen Tagen liegt (Standard in Grocy: 5).",
+        "es": "Un producto tiene la fecha próxima cuando vence dentro de este número de días (5 por defecto en Grocy)."
+      },
+      "required": false,
+      "default": 5,
+      "min": 1,
+      "max": 30
+    },
+    {
+      "key": "shopping_list_id",
+      "type": "number",
+      "label": {
+        "en": "Shopping list number",
+        "fr": "Numéro de la liste de courses",
+        "de": "Nummer des Einkaufszettels",
+        "es": "Número de la lista de la compra"
+      },
+      "description": {
+        "en": "1 is Grocy's default list. With several lists, the number is in the address of the list page (list=2).",
+        "fr": "1 est la liste par défaut de Grocy. Avec plusieurs listes, le numéro est dans l'adresse de la page de la liste (list=2).",
+        "de": "1 ist der Standard-Einkaufszettel von Grocy. Bei mehreren steht die Nummer in der Adresse der Seite (list=2).",
+        "es": "1 es la lista por defecto de Grocy. Con varias listas, el número está en la dirección de la página de la lista (list=2)."
+      },
+      "required": false,
+      "default": 1,
+      "min": 1,
+      "max": 1000
+    },
+    {
+      "key": "poll_interval",
+      "type": "select",
+      "label": {
+        "en": "Refresh interval",
+        "fr": "Intervalle de rafraîchissement",
+        "de": "Aktualisierungsintervall",
+        "es": "Intervalo de actualización"
+      },
+      "required": false,
+      "default": "60",
       "options": [
-        { "value": "celsius", "label": { "en": "Celsius", "fr": "Celsius" } },
-        { "value": "fahrenheit", "label": { "en": "Fahrenheit", "fr": "Fahrenheit" } }
+        {
+          "value": "30",
+          "label": {
+            "en": "30 seconds",
+            "fr": "30 secondes",
+            "de": "30 Sekunden",
+            "es": "30 segundos"
+          }
+        },
+        {
+          "value": "60",
+          "label": { "en": "1 minute", "fr": "1 minute", "de": "1 Minute", "es": "1 minuto" }
+        },
+        {
+          "value": "120",
+          "label": { "en": "2 minutes", "fr": "2 minutes", "de": "2 Minuten", "es": "2 minutos" }
+        },
+        {
+          "value": "300",
+          "label": { "en": "5 minutes", "fr": "5 minutes", "de": "5 Minuten", "es": "5 minutos" }
+        }
       ]
     },
     {
-      "key": "poll_frequency",
-      "type": "number",
-      "label": { "en": "Refresh interval (s)", "fr": "Intervalle de rafraîchissement (s)" },
+      "key": "language",
+      "type": "select",
+      "label": {
+        "en": "Language of the feature names",
+        "fr": "Langue des noms de fonctionnalités",
+        "de": "Sprache der Funktionsnamen",
+        "es": "Idioma de los nombres de funciones"
+      },
       "description": {
-        "en": "How often sensors are polled, in seconds (one minute minimum).",
-        "fr": "Fréquence d'interrogation des capteurs, en secondes (une minute minimum)."
+        "en": "Gladys does not tell integrations the user's language: choose the one of the feature names and messages.",
+        "fr": "Gladys ne transmet pas la langue de l'utilisateur aux intégrations : choisissez celle des noms de fonctionnalités et des messages.",
+        "de": "Gladys teilt Integrationen die Sprache nicht mit: Wähle die der Funktionsnamen und Meldungen.",
+        "es": "Gladys no comunica el idioma del usuario a las integraciones: elija el de los nombres de funciones y los mensajes."
       },
       "required": false,
-      "default": 300,
-      "min": 60,
-      "max": 3600
+      "default": "fr",
+      "options": [
+        {
+          "value": "en",
+          "label": { "en": "English", "fr": "Anglais", "de": "Englisch", "es": "Inglés" }
+        },
+        {
+          "value": "fr",
+          "label": { "en": "French", "fr": "Français", "de": "Französisch", "es": "Francés" }
+        },
+        {
+          "value": "de",
+          "label": { "en": "German", "fr": "Allemand", "de": "Deutsch", "es": "Alemán" }
+        },
+        {
+          "value": "es",
+          "label": { "en": "Spanish", "fr": "Espagnol", "de": "Spanisch", "es": "Español" }
+        }
+      ]
     }
   ],
   "actions": [
     {
-      "key": "test_weather",
-      "label": { "en": "Test the weather provider", "fr": "Tester le fournisseur météo" },
+      "key": "test_connection",
+      "label": {
+        "en": "Test the connection",
+        "fr": "Tester la connexion",
+        "de": "Verbindung testen",
+        "es": "Probar la conexión"
+      },
       "timeout_seconds": 30
-    },
-    {
-      "key": "identify",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "fields": [
-        {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
-          "required": true
-        }
-      ]
     }
   ],
   "scene_triggers": [
     {
-      "key": "motion_detected",
-      "label": { "en": "Motion detected", "fr": "Mouvement détecté" },
+      "key": "product_expiring",
+      "label": {
+        "en": "A product is about to expire",
+        "fr": "Un produit va périmer",
+        "de": "Ein Produkt läuft bald ab",
+        "es": "Un producto va a caducar"
+      },
       "description": {
-        "en": "A demo motion sensor saw a person or an animal move.",
-        "fr": "Un détecteur de démonstration a vu bouger une personne ou un animal."
+        "en": "Once per product and date: when it becomes due soon, then when its date has passed.",
+        "fr": "Une fois par produit et par date : quand il devient bientôt périmé, puis quand sa date est passée.",
+        "de": "Einmal pro Produkt und Datum: wenn es bald fällig wird, dann wenn sein Datum vorbei ist.",
+        "es": "Una vez por producto y fecha: cuando su fecha se acerca, y luego cuando ha pasado."
       },
       "fields": [
         {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Sensor", "fr": "Détecteur" }
+          "key": "product",
+          "type": "string",
+          "label": {
+            "en": "Product (exact Grocy name, empty: any)",
+            "fr": "Produit (nom exact dans Grocy, vide : tous)",
+            "de": "Produkt (genauer Name in Grocy, leer: alle)",
+            "es": "Producto (nombre exacto en Grocy, vacío: todos)"
+          }
         },
         {
-          "key": "target",
+          "key": "status",
           "type": "multi_select",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" },
+          "label": {
+            "en": "When",
+            "fr": "Quand",
+            "de": "Wann",
+            "es": "Cuándo"
+          },
           "options": [
-            { "value": "person", "label": { "en": "Person", "fr": "Personne" } },
-            { "value": "animal", "label": { "en": "Animal", "fr": "Animal" } }
+            {
+              "value": "due_soon",
+              "label": {
+                "en": "Due soon",
+                "fr": "Bientôt périmé",
+                "de": "Bald fällig",
+                "es": "Fecha próxima"
+              }
+            },
+            {
+              "value": "overdue",
+              "label": {
+                "en": "Best-before date passed",
+                "fr": "Date de consommation recommandée passée",
+                "de": "Mindesthaltbarkeitsdatum überschritten",
+                "es": "Fecha de consumo preferente superada"
+              }
+            },
+            {
+              "value": "expired",
+              "label": {
+                "en": "Expired (use-by date passed)",
+                "fr": "Périmé (date limite passée)",
+                "de": "Abgelaufen (Verbrauchsdatum überschritten)",
+                "es": "Caducado (fecha de caducidad superada)"
+              }
+            }
           ]
         }
       ],
       "variables": [
         {
-          "key": "target",
+          "key": "product",
           "type": "string",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" }
+          "label": { "en": "Product", "fr": "Produit", "de": "Produkt", "es": "Producto" }
+        },
+        {
+          "key": "due_date",
+          "type": "string",
+          "label": {
+            "en": "Due date (YYYY-MM-DD)",
+            "fr": "Date (AAAA-MM-JJ)",
+            "de": "Datum (JJJJ-MM-TT)",
+            "es": "Fecha (AAAA-MM-DD)"
+          }
+        },
+        {
+          "key": "days_left",
+          "type": "number",
+          "label": {
+            "en": "Days left (negative: past)",
+            "fr": "Jours restants (négatif : passé)",
+            "de": "Verbleibende Tage (negativ: vorbei)",
+            "es": "Días restantes (negativo: pasado)"
+          }
+        },
+        {
+          "key": "amount",
+          "type": "number",
+          "label": {
+            "en": "Amount in stock",
+            "fr": "Quantité en stock",
+            "de": "Menge auf Lager",
+            "es": "Cantidad en existencias"
+          }
+        }
+      ]
+    },
+    {
+      "key": "chore_overdue",
+      "label": {
+        "en": "A chore is overdue",
+        "fr": "Une tâche ménagère est en retard",
+        "de": "Eine Hausarbeit ist überfällig",
+        "es": "Una tarea del hogar está atrasada"
+      },
+      "description": {
+        "en": "When the planned time of a chore passes without it being done.",
+        "fr": "Quand l'heure prévue d'une tâche ménagère passe sans qu'elle soit faite.",
+        "de": "Wenn der geplante Zeitpunkt einer Hausarbeit verstreicht, ohne dass sie erledigt ist.",
+        "es": "Cuando pasa la hora prevista de una tarea del hogar sin que se haya hecho."
+      },
+      "fields": [
+        {
+          "key": "chore",
+          "type": "string",
+          "label": {
+            "en": "Chore (exact Grocy name, empty: any)",
+            "fr": "Tâche (nom exact dans Grocy, vide : toutes)",
+            "de": "Hausarbeit (genauer Name in Grocy, leer: alle)",
+            "es": "Tarea (nombre exacto en Grocy, vacío: todas)"
+          }
+        },
+        {
+          "key": "assigned_to",
+          "type": "string",
+          "label": {
+            "en": "Assigned to (Grocy user, empty: anyone)",
+            "fr": "Attribuée à (utilisateur Grocy, vide : tous)",
+            "de": "Zugewiesen an (Grocy-Benutzer, leer: alle)",
+            "es": "Asignada a (usuario de Grocy, vacío: todos)"
+          }
+        }
+      ],
+      "variables": [
+        {
+          "key": "chore",
+          "type": "string",
+          "label": {
+            "en": "Chore",
+            "fr": "Tâche ménagère",
+            "de": "Hausarbeit",
+            "es": "Tarea del hogar"
+          }
+        },
+        {
+          "key": "assigned_to",
+          "type": "string",
+          "label": {
+            "en": "Assigned to",
+            "fr": "Attribuée à",
+            "de": "Zugewiesen an",
+            "es": "Asignada a"
+          }
+        },
+        {
+          "key": "due_time",
+          "type": "string",
+          "label": {
+            "en": "Planned time",
+            "fr": "Heure prévue",
+            "de": "Geplanter Zeitpunkt",
+            "es": "Hora prevista"
+          }
         }
       ]
     }
   ],
   "scene_actions": [
     {
-      "key": "identify_device",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "description": {
-        "en": "Make a device signal itself (the demo light blinks).",
-        "fr": "Fait se signaler un appareil (la lampe de démonstration clignote)."
+      "key": "consume_product",
+      "label": {
+        "en": "Consume a Grocy product",
+        "fr": "Consommer un produit Grocy",
+        "de": "Grocy-Produkt verbrauchen",
+        "es": "Consumir un producto de Grocy"
       },
-      "timeout_seconds": 15,
+      "description": {
+        "en": "Remove an amount of a product from the stock, found by its name or its barcode.",
+        "fr": "Retire une quantité d'un produit du stock, trouvé par son nom ou son code-barres.",
+        "de": "Nimmt eine Menge eines Produkts aus dem Bestand, gefunden über Name oder Barcode.",
+        "es": "Retira una cantidad de un producto de las existencias, por su nombre o su código de barras."
+      },
+      "timeout_seconds": 30,
       "fields": [
         {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
+          "key": "product",
+          "type": "string",
+          "label": {
+            "en": "Product name or barcode",
+            "fr": "Nom ou code-barres du produit",
+            "de": "Produktname oder Barcode",
+            "es": "Nombre o código de barras del producto"
+          },
+          "required": true
+        },
+        {
+          "key": "amount",
+          "type": "number",
+          "label": {
+            "en": "Amount (stock unit)",
+            "fr": "Quantité (unité de stock)",
+            "de": "Menge (Bestandseinheit)",
+            "es": "Cantidad (unidad de existencias)"
+          },
+          "required": true,
+          "default": 1,
+          "min": 1,
+          "max": 1000
+        },
+        {
+          "key": "spoiled",
+          "type": "boolean",
+          "label": {
+            "en": "Thrown away (spoiled)",
+            "fr": "Jeté (périmé)",
+            "de": "Weggeworfen (verdorben)",
+            "es": "Tirado (desperdiciado)"
+          },
+          "required": false,
+          "default": false
+        }
+      ],
+      "outputs": [
+        {
+          "key": "product",
+          "type": "string",
+          "label": { "en": "Product", "fr": "Produit", "de": "Produkt", "es": "Producto" }
+        },
+        {
+          "key": "amount",
+          "type": "number",
+          "label": {
+            "en": "Amount consumed",
+            "fr": "Quantité consommée",
+            "de": "Verbrauchte Menge",
+            "es": "Cantidad consumida"
+          }
+        },
+        {
+          "key": "stock_left",
+          "type": "number",
+          "label": {
+            "en": "Amount left in stock",
+            "fr": "Quantité restante en stock",
+            "de": "Restmenge auf Lager",
+            "es": "Cantidad restante en existencias"
+          }
+        }
+      ]
+    },
+    {
+      "key": "add_to_shopping_list",
+      "label": {
+        "en": "Add to the Grocy shopping list",
+        "fr": "Ajouter à la liste de courses Grocy",
+        "de": "Zum Grocy-Einkaufszettel hinzufügen",
+        "es": "Añadir a la lista de la compra de Grocy"
+      },
+      "description": {
+        "en": "The product of that exact name, or a free-text line when no product has it.",
+        "fr": "Le produit portant exactement ce nom, ou une ligne de texte libre si aucun produit ne le porte.",
+        "de": "Das Produkt mit genau diesem Namen, sonst eine Freitextzeile.",
+        "es": "El producto con ese nombre exacto, o una línea de texto libre si ningún producto lo tiene."
+      },
+      "timeout_seconds": 30,
+      "fields": [
+        {
+          "key": "item",
+          "type": "string",
+          "label": {
+            "en": "Product or text",
+            "fr": "Produit ou texte",
+            "de": "Produkt oder Text",
+            "es": "Producto o texto"
+          },
+          "required": true
+        },
+        {
+          "key": "amount",
+          "type": "number",
+          "label": {
+            "en": "Amount",
+            "fr": "Quantité",
+            "de": "Menge",
+            "es": "Cantidad"
+          },
+          "required": true,
+          "default": 1,
+          "min": 1,
+          "max": 1000
+        },
+        {
+          "key": "note",
+          "type": "string",
+          "label": {
+            "en": "Note",
+            "fr": "Remarque",
+            "de": "Notiz",
+            "es": "Nota"
+          },
+          "required": false
+        }
+      ],
+      "outputs": [
+        {
+          "key": "item",
+          "type": "string",
+          "label": {
+            "en": "Item added",
+            "fr": "Article ajouté",
+            "de": "Hinzugefügter Artikel",
+            "es": "Artículo añadido"
+          }
+        },
+        {
+          "key": "known_product",
+          "type": "boolean",
+          "label": {
+            "en": "Known Grocy product",
+            "fr": "Produit connu de Grocy",
+            "de": "Bekanntes Grocy-Produkt",
+            "es": "Producto conocido en Grocy"
+          }
+        },
+        {
+          "key": "items_on_list",
+          "type": "number",
+          "label": {
+            "en": "Items on the list",
+            "fr": "Articles sur la liste",
+            "de": "Artikel auf dem Einkaufszettel",
+            "es": "Artículos en la lista"
+          }
+        }
+      ]
+    },
+    {
+      "key": "execute_chore",
+      "label": {
+        "en": "Mark a Grocy chore as done",
+        "fr": "Marquer une tâche ménagère Grocy comme faite",
+        "de": "Grocy-Hausarbeit als erledigt markieren",
+        "es": "Marcar una tarea del hogar de Grocy como hecha"
+      },
+      "description": {
+        "en": "Track an execution of the chore now, e.g. when the robot vacuum finishes.",
+        "fr": "Enregistre une exécution de la tâche maintenant, par ex. quand l'aspirateur robot a fini.",
+        "de": "Erfasst jetzt eine Ausführung der Hausarbeit, z. B. wenn der Saugroboter fertig ist.",
+        "es": "Registra ahora una ejecución de la tarea, p. ej. cuando el robot aspirador termina."
+      },
+      "timeout_seconds": 30,
+      "fields": [
+        {
+          "key": "chore",
+          "type": "string",
+          "label": {
+            "en": "Chore name",
+            "fr": "Nom de la tâche ménagère",
+            "de": "Name der Hausarbeit",
+            "es": "Nombre de la tarea del hogar"
+          },
           "required": true
         }
       ],
       "outputs": [
         {
-          "key": "signalled",
-          "type": "boolean",
-          "label": { "en": "Device signalled", "fr": "Appareil signalé" }
+          "key": "chore",
+          "type": "string",
+          "label": {
+            "en": "Chore",
+            "fr": "Tâche ménagère",
+            "de": "Hausarbeit",
+            "es": "Tarea del hogar"
+          }
+        },
+        {
+          "key": "next_time",
+          "type": "string",
+          "label": {
+            "en": "Next planned time",
+            "fr": "Prochaine échéance",
+            "de": "Nächster geplanter Zeitpunkt",
+            "es": "Próxima fecha prevista"
+          }
+        }
+      ]
+    },
+    {
+      "key": "charge_battery",
+      "label": {
+        "en": "Mark a Grocy battery as charged",
+        "fr": "Marquer une pile Grocy comme rechargée",
+        "de": "Grocy-Batterie als geladen markieren",
+        "es": "Marcar una batería de Grocy como cargada"
+      },
+      "description": {
+        "en": "Track a charge cycle of the battery now.",
+        "fr": "Enregistre un cycle de charge de la pile maintenant.",
+        "de": "Erfasst jetzt einen Ladezyklus der Batterie.",
+        "es": "Registra ahora un ciclo de carga de la batería."
+      },
+      "timeout_seconds": 30,
+      "fields": [
+        {
+          "key": "battery",
+          "type": "string",
+          "label": {
+            "en": "Battery name",
+            "fr": "Nom de la pile",
+            "de": "Name der Batterie",
+            "es": "Nombre de la batería"
+          },
+          "required": true
+        }
+      ],
+      "outputs": [
+        {
+          "key": "battery",
+          "type": "string",
+          "label": { "en": "Battery", "fr": "Pile", "de": "Batterie", "es": "Batería" }
+        },
+        {
+          "key": "next_charge",
+          "type": "string",
+          "label": {
+            "en": "Next charge",
+            "fr": "Prochaine charge",
+            "de": "Nächste Ladung",
+            "es": "Próxima carga"
+          }
         }
       ]
     }
   ],
   "widgets": [
     {
-      "key": "demo_status",
-      "label": { "en": "Demo status", "fr": "État de la démo" },
-      "description": {
-        "en": "Live temperature and plug power, plug connection and observed location.",
-        "fr": "Température et puissance en direct, connexion de la prise, position observée."
+      "key": "consume_soon",
+      "label": {
+        "en": "Eat first",
+        "fr": "À consommer vite",
+        "de": "Zuerst verbrauchen",
+        "es": "Consumir primero"
       },
-      "icon": "activity",
-      "action_timeout_seconds": 15
+      "description": {
+        "en": "The products expired, past their date and due soon, the most urgent first.",
+        "fr": "Les produits périmés, à date dépassée et bientôt périmés, les plus urgents en tête.",
+        "de": "Abgelaufene, überfällige und bald fällige Produkte, die dringendsten zuerst.",
+        "es": "Los productos caducados, con fecha superada y próxima, los más urgentes primero."
+      },
+      "icon": "clock"
+    },
+    {
+      "key": "today",
+      "label": {
+        "en": "To do today",
+        "fr": "À faire aujourd'hui",
+        "de": "Heute zu tun",
+        "es": "Para hacer hoy"
+      },
+      "description": {
+        "en": "Chores, tasks and batteries due today or late, with Done buttons.",
+        "fr": "Tâches ménagères, tâches et piles du jour ou en retard, avec des boutons Fait.",
+        "de": "Heute fällige oder überfällige Hausarbeiten, Aufgaben und Batterien, mit Erledigt-Tasten.",
+        "es": "Tareas del hogar, tareas y baterías de hoy o atrasadas, con botones Hecho."
+      },
+      "icon": "check-square",
+      "action_timeout_seconds": 30
+    },
+    {
+      "key": "shopping_list",
+      "label": {
+        "en": "Shopping list",
+        "fr": "Courses",
+        "de": "Einkaufszettel",
+        "es": "Lista de la compra"
+      },
+      "description": {
+        "en": "The items to buy, a button for the missing products and a form to add an item.",
+        "fr": "Les articles à acheter, un bouton pour les produits manquants et un formulaire d'ajout.",
+        "de": "Die zu kaufenden Artikel, eine Taste für fehlende Produkte und ein Formular zum Hinzufügen.",
+        "es": "Los artículos por comprar, un botón para los productos que faltan y un formulario para añadir."
+      },
+      "icon": "shopping-cart",
+      "action_timeout_seconds": 30
     }
   ]
 }

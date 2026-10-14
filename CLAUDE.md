@@ -16,8 +16,10 @@ its only runtime dependency. It started from the official JavaScript template.
 ```bash
 npm install
 npm test                                  # node --test, the built-in runner
-node --test test/devices.test.js          # one file
-node --test --test-name-pattern "plug"    # tests whose name matches
+node --test test/hub.test.js              # one file
+node --test --test-name-pattern "chore"   # tests whose name matches
+npm run test:real                         # against a real Grocy (GROCY_URL, GROCY_API_KEY)
+node scripts/probe.mjs                    # read-only check of a real Grocy
 npm run lint                              # ESLint
 npm run format:check                      # Prettier, as the CI runs it
 npm run format                            # Prettier, fix in place
@@ -32,15 +34,24 @@ pushing.
 
 ```
 index.js                          SDK wiring only: handlers registered before connect()
-src/devices/index.js              registry of the device blueprints + dispatch helpers
-src/devices/<type>.js             one device type per file (buildDevice, onPoll, onSetValue...)
+src/app.js                        registers every SDK handler on the hub (index.js and tests share it)
+src/hub.js                        reads Grocy on a timer, states, transport, scene events, commands
+src/devices.js                    the Grocy device: feature keys, names (4 languages), payload
 src/scenes.js                     scene action handlers (manifest `scene_actions`)
-src/widgets.js                    dashboard widget handlers (manifest `widgets`)
+src/widgets.js                    the three dashboard widgets (manifest `widgets`)
+src/texts.js                      every other text sent to Gladys, in en/fr/de/es
 src/config.js                     DEFAULT_CONFIG (mirrors the manifest defaults) + normalization
-src/weather.js                    example driver (Open-Meteo)
-gladys-assistant-integration.json manifest: name, config_schema, actions, image...
-docs/en.md, docs/fr.md            user documentation, re-hosted by Gladys (mandatory)
-test/                             node --test, against the SDK's fake Gladys (integration-sdk/testing)
+src/store.js                      /data persistence (scene events already announced)
+src/grocy/http.js                 the only network code (node:http(s), no redirect followed)
+src/grocy/client.js               Grocy REST client: API key, errors, endpoints
+src/grocy/model.js                Grocy answers → snapshot (what is due, with the Grocy UI rules)
+scripts/probe.mjs                 read-only probe of a real Grocy (for a machine with the network)
+gladys-assistant-integration.json manifest: name, config_schema, actions, triggers, widgets...
+docs/{en,fr,de,es}.md             user documentation, re-hosted by Gladys (en, fr mandatory)
+test/                             node --test, against the SDK's fake Gladys and a fake Grocy
+test/helpers/fakeGrocy.js         in-memory Grocy 4.7 (or 3, numbers as strings)
+test/fixtures/grocy/pygrocy/      real answers of a Grocy 3.3.1, recorded by pygrocy (MIT)
+test/real/                        optional test against a real Grocy (skipped without GROCY_URL)
 .github/scripts/release.mjs       release helpers (manifest bump, changelog), tested in test/
 ```
 
@@ -70,8 +81,9 @@ test/                             node --test, against the SDK's fake Gladys (in
   `type: "provider"`: 5.1.0). `test/manifest.test.js` ties the manifest to the
   code (defaults, action, scene and widget handlers): change both sides
   together.
-- **User-facing text** is bilingual (English and French): action messages,
-  manifest texts, and `docs/en.md` / `docs/fr.md`, kept in sync.
+- **User-facing text** exists in four languages (English, French, German with
+  "du", Spanish with "usted"): action messages, manifest texts, feature names,
+  widget texts and `docs/{en,fr,de,es}.md`, kept in sync (`test/i18n.test.js`).
 - **Style.** Prettier formats, ESLint catches mistakes. Comments explain why,
   in English. Tests never touch the network.
 
@@ -170,6 +182,16 @@ code de ce dépôt. Compléter ce fichier quand un nouveau piège est découvert
 - **Heartbeat** : republier au moins toutes les 12 h une valeur qui ne change pas, sinon le front
   affiche « Pas de valeur récente » au-delà de 48 h.
 
+- **Tests et horloge** : `publishChangedStates` du SDK date ses valeurs avec `Date.now()` ; tester le
+  heartbeat demande `t.mock.timers.enable({ apis: ['Date'] })`, une horloge injectée ne suffit pas.
+  Le faux Gladys enregistre les transports sous la clé `device_external_id`.
+- `node --test <dossier>` échoue sous Node 22 (« Cannot find module ») : passer un motif de fichiers
+  (`node --test test/real/*.test.js`). `npm test` (`node --test` nu) exécute tout `test/**` : un test
+  contre un vrai service doit se passer (`skip`) sans ses variables d'environnement.
+- **Espagnol « usted »** : un impératif de « tú » (« marca », « consulta ») est aussi la 3ᵉ personne
+  (« la integración marca ») ; seuls « tu », « tus », « tú », « ti », « contigo » se testent sans faux
+  positifs.
+
 **Widgets, déclencheurs, actions de scène (SDK ≥ 0.14, Gladys ≥ 5.1)**
 
 - **Cibler la dernière version publiée du cœur, pas `master`** : la spec de `master` décrit des
@@ -197,6 +219,44 @@ code de ce dépôt. Compléter ce fichier quand un nouveau piège est découvert
 - Les filtres de scène ne font qu'égalité et appartenance : un seuil reste le travail d'un capteur.
 - **Les clés de widgets, de déclencheurs et d'actions sont figées une fois publiées.**
 - `gladys_version` `>=5.1.0` dès qu'il y a widgets, déclencheurs ou actions de scène.
+
+## Grocy (propre à ce dépôt)
+
+- **API** : REST sous `<adresse>/api`, spécification OpenAPI livrée avec Grocy (`grocy.openapi.json`,
+  servie sur `/api` de chaque instance). Authentification par l'en-tête `GROCY-API-KEY` sur **toutes**
+  les routes, même `/system/info` ; clé refusée ou absente : **401 sans corps** (une page web répond
+  302 vers `/login`). Les erreurs métier sont des **400 `{ error_message }`** : le client les remonte
+  en `REJECTED` avec le message (« Amount to be consumed cannot be > current stock amount… »,
+  « No product with barcode X found », « Chore does not exist »). Aucun quota de requêtes.
+- **Grocy 3 envoie presque tout en chaînes** (`"5"`, `"1.0"`, `"1"` pour vrai), Grocy 4.0 en nombres ;
+  `/batteries` n'embarque l'objet pile (son nom) que depuis la 4.0 : sinon `/objects/batteries`.
+  `src/grocy/model.js` lit les deux ; le faux serveur sait faire les deux (`grocy3: true`).
+- **Dates sans fuseau** : toutes les heures de Grocy sont l'heure locale du serveur. `/system/time`
+  donne `time_local` et `time_utc` : leur écart est le fuseau (son champ `offset` n'est **que** le
+  paramètre de requête, toujours 0). Le conteneur compare avec cette horloge-là, pas la sienne.
+- **Règles d'échéance** (réécrites d'après `controllers/*Controller.php`) : tâche ménagère en retard si
+  `next_estimated_execution_time < maintenant`, du jour si `<= aujourd'hui 23:59:59` ; une tâche
+  « date seulement » est due à 23:59:59 de son jour, donc jamais en retard ce jour-là. Pile : idem,
+  et seulement avec `charge_interval_days > 0` (sinon `2999-12-31`). Tâche (task) : en retard si
+  `due_date < aujourd'hui`. Produits : les listes de `/stock/volatile?due_soon_days=N` ; la liste
+  `overdue_products` contient **aussi** les produits à DLC (`due_type` 2), qui sont les « périmés »
+  (`expired_products`) : les compter une seule fois.
+- **Lecture légère** : `/system/db-changed-time` à chaque cycle ; tout relire seulement s'il a changé,
+  au changement de jour du serveur, ou toutes les 15 min. Il n'a qu'une **précision d'une seconde** :
+  un changement dans la seconde d'une lecture passerait inaperçu, d'où une relecture complète au
+  cycle suivant quand la date de changement est récente.
+- `/stock/shoppinglist/add-product` ajoute à une ligne existante du même produit ; une ligne de texte
+  libre passe par `POST /objects/shopping_list {shopping_list_id, note, amount}`.
+- **Identité** : un seul appareil, `platformId` fixe `"1"` (pas l'adresse : HTTP→HTTPS ou changement
+  d'IP ne doit pas orpheliner l'appareil). Les annonces de déclencheurs sont gardées dans
+  `/data/grocy-state.json` avec l'adresse de Grocy : une autre adresse repart d'une ligne de base.
+- **Déclencheurs** : au tout premier démarrage, ce qui est déjà dû est pris comme connu (pas de rafale
+  d'événements à l'installation) ; ensuite une annonce par (produit, date, statut) et par (tâche
+  ménagère, échéance), 25 au plus par cycle.
+- **Session de code sans Grocy** : PHP 8.3 + SQLite sont présents, mais `composer install` des
+  dépendances de Grocy a été refusé par le classifieur de permissions de la session (code externe) :
+  pas de Grocy réel ici. `scripts/probe.mjs` (lecture seule) et `npm run test:real` sont prêts pour
+  une machine qui l'a.
 
 ## Store
 

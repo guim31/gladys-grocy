@@ -1,0 +1,12 @@
+{
+  "source": "pygrocy test/cassettes/test_chores/TestChores.test_execute_chore_invalid.yaml",
+  "method": "POST",
+  "path": "/api/chores/1000/execute",
+  "request": {
+    "tracked_time": "2022-04-22T08:40:12.632403+00:00"
+  },
+  "status": 400,
+  "body": {
+    "error_message": "Chore does not exist"
+  }
+}

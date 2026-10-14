@@ -1,67 +1,183 @@
-# Template de démonstration
+# Grocy
 
-Ceci est la documentation utilisateur de l'intégration. Gladys ré-héberge ce
-fichier et affiche un lien **Documentation** permanent vers lui dans l'écran
-de configuration (dans la langue de l'utilisateur, avec l'anglais en repli) —
-c'est au moment de configurer que l'utilisateur en a le plus besoin. Gardez
-les courtes indications d'accueil dans les blocs `section` du `config_schema`
-du manifest ; mettez ici le pas-à-pas détaillé (captures d'écran, dépannage…).
+Reliez [Grocy](https://grocy.info), l'« ERP du frigo » auto-hébergé, à Gladys
+sur votre réseau local : ce qu'il faut consommer en premier, les tâches
+ménagères du jour, la liste de courses et les piles à recharger, sur le tableau
+de bord et dans vos scènes. Un bouton, une présence ou l'aspirateur robot
+peuvent alors dire à Grocy ce qui s'est passé : un produit consommé, un article
+à acheter, une tâche faite, une pile rechargée.
 
-## Ce que vous obtenez
+> **Développée sans le matériel : vos retours sont bienvenus.** Cette
+> intégration a été construite et testée sur les réponses documentées par Grocy
+> (sa spécification OpenAPI) et sur de vraies réponses d'un Grocy enregistrées
+> par la bibliothèque pygrocy, pas sur un Grocy en fonctionnement. Si quelque
+> chose ne marche pas comme décrit, dites-le sur le
+> [forum Gladys](https://community.gladysassistant.com) ou dans les
+> [issues](https://github.com/guim31/gladys-grocy/issues).
 
-Six appareils de démonstration apparaissent après l'installation : une
-station météo (vraies données Open-Meteo), un interrupteur, une lampe
-variable, une prise connectée avec mesure de puissance, un détecteur de
-mouvement et une caméra.
+## Ce qu'il vous faut
 
-## Configuration
+- Gladys Assistant 5.2.0 ou plus.
+- **Grocy** 3.3 ou plus (Grocy 4 recommandé), joignable depuis Gladys : sur un
+  NAS, un Raspberry Pi, Docker, Unraid, Proxmox, ou le module complémentaire
+  Home Assistant si son port est publié.
+- Une **clé d'API** de Grocy. Ouvrez Grocy, cliquez sur votre nom
+  d'utilisateur (en haut à droite) → **Gérer les clefs API** → **Ajouter**, et
+  copiez la clé. L'intégration agit au nom de l'utilisateur qui possède la
+  clé : les tâches qu'elle marque comme faites le sont par cet utilisateur.
 
-1. Ouvrez l'onglet **Configuration** de l'intégration.
-2. Renseignez la **latitude** et la **longitude** que la station météo de
-   démonstration doit observer (Paris par défaut), et choisissez votre unité
-   de température. L'**intervalle de rafraîchissement** règle la fréquence
-   de lecture de la station météo et de la puissance de la prise : toutes
-   les 5 minutes par défaut, toutes les minutes au plus.
-3. Enregistrez : les appareils apparaissent dans l'onglet **Découverte**,
-   prêts à être ajoutés.
+## Installation
 
-Le réglage **Préférer la connexion locale** pilote la prise de
-démonstration : elle affiche en badge le canal réellement utilisé (local ou
-cloud), avec un point orange quand elle fonctionne en mode dégradé (local
-refusé, bascule cloud).
+1. Installez l'intégration depuis le catalogue de Gladys.
+2. Dans **Configuration**, saisissez l'**Adresse de Grocy**, celle avec
+   laquelle vous ouvrez Grocy, par exemple `http://192.168.1.10:9283`. Si Grocy
+   est servi dans un sous-dossier (`https://nas.example.com/grocy`), gardez-le.
+   Collez la **Clé d'API**.
+3. HTTPS avec votre propre certificat (NAS, proxy inverse) ? Cochez **Accepter
+   les certificats auto-signés**.
+4. Ajustez si besoin **Bientôt périmé : sous (jours)** (5 par défaut, comme
+   Grocy), le **Numéro de la liste de courses** (1 est la liste par défaut de
+   Grocy), l'**Intervalle de rafraîchissement** et la **Langue des noms de
+   fonctionnalités**.
+5. Enregistrez, puis cliquez sur **Tester la connexion** : le message sous le
+   bouton donne la version de Grocy et ce qui est à faire.
+6. Ouvrez l'onglet **Découverte** : l'appareil **Grocy** y figure. Cliquez sur
+   **Ajouter**.
 
-## Actions
+## L'appareil Grocy
 
-- **Tester le fournisseur météo** — effectue une requête en direct vers
-  Open-Meteo et affiche la température et l'humidité actuelles sous le
-  bouton.
-- **Identifier un appareil** — choisissez un de vos appareils dans la liste
-  et il se signale (la lampe de démonstration « clignote » dans les logs).
+Un appareil pour votre Grocy, avec des compteurs (des nombres, historisés),
+chacun correspondant à ce que Grocy affiche en rouge ou en orange :
+
+| Fonctionnalité              | Ce qu'elle compte                                                                        |
+| --------------------------- | ---------------------------------------------------------------------------------------- |
+| Produits bientôt périmés    | Produits dont la date tombe dans la fenêtre « bientôt périmé », aujourd'hui compris      |
+| Produits à date dépassée    | Produits dont la date de consommation recommandée (DDM) est passée : souvent encore bons |
+| Produits périmés            | Produits dont la date limite de consommation (DLC) est passée : à jeter                  |
+| Produits sous le stock min. | Produits sous le stock minimum défini dans Grocy                                         |
+| Articles à acheter          | Articles pas encore achetés de la liste de courses choisie                               |
+| Tâches ménagères du jour    | Tâches ménagères prévues plus tard aujourd'hui                                           |
+| Tâches ménagères en retard  | Tâches ménagères dont l'heure prévue est passée                                          |
+| Piles à recharger           | Piles à recharger aujourd'hui ou déjà en retard (celles qui ont un intervalle de charge) |
+| Tâches du jour              | Tâches ouvertes à faire aujourd'hui                                                      |
+| Tâches en retard            | Tâches ouvertes dont l'échéance est passée                                               |
+
+Grocy appelle les tâches ménagères « Corvées ». Les noms des fonctionnalités
+sont fixés à l'ajout de l'appareil, dans la langue de la configuration.
+Utilisez-les dans les scènes avec le déclencheur habituel de Gladys « la valeur
+d'un appareil change » (par exemple _Tâches ménagères en retard_ supérieur à 0
+à 20 h).
+
+## Widgets du tableau de bord
+
+Ajoutez-les depuis l'éditeur du tableau de bord, sous l'intégration :
+
+- **À consommer vite** : les produits périmés, puis ceux à date dépassée, puis
+  ceux bientôt périmés, avec leur quantité et leur date.
+- **À faire aujourd'hui** : les tâches ménagères et les tâches du jour ou en
+  retard, et les piles à recharger, les retards d'abord. Les quatre premières
+  ont un bouton à leur nom : un appui marque la tâche ménagère comme faite, la
+  tâche comme terminée ou la pile comme rechargée dans Grocy.
+- **Courses** : les articles à acheter, et deux boutons. **Ajouter les
+  manquants** met sur la liste les produits sous leur stock minimum.
+  **Ajouter…** ouvre un petit formulaire : un produit ou n'importe quel texte,
+  et une quantité.
 
 ## Scènes
 
-L'intégration ajoute ses propres cartes à l'éditeur de scènes (Gladys 5.1
-ou plus récent), dans la catégorie **Intégrations** :
+### Déclencheurs
 
-- **Mouvement détecté** (déclencheur) — lance la scène quand un détecteur
-  de démonstration voit bouger quelque chose. Choisissez éventuellement le
-  détecteur et ce qui a bougé (personne, animal) ; laissés vides, toute
-  détection correspond. Les actions suivantes peuvent lire ce qui a bougé
-  avec `{{triggerEvent.data.target}}`.
-- **Identifier un appareil** (action) — fait se signaler l'appareil choisi.
-  Elle indique si l'appareil a pu se signaler, pour que les actions
-  suivantes puissent en dépendre.
+- **Un produit va périmer** : une fois par produit et par date, quand le
+  produit devient bientôt périmé, puis à nouveau quand sa date est passée.
+  Filtres : le nom exact du produit dans Grocy (vide : tous), et quand
+  (_Bientôt périmé_, _Date de consommation recommandée passée_, _Périmé (date
+  limite passée)_). Informations transmises à la scène : produit, date, jours
+  restants (négatif une fois passé), quantité en stock.
+- **Une tâche ménagère est en retard** : quand l'heure prévue d'une tâche
+  ménagère passe sans qu'elle soit faite. Filtres : le nom exact de la tâche
+  dans Grocy et l'utilisateur Grocy à qui elle est attribuée (vide : tous).
+  Informations transmises à la scène : tâche ménagère, attribuée à, heure
+  prévue.
 
-## Tableau de bord
+Ce qui est déjà dû au tout premier démarrage de l'intégration est considéré
+comme connu : seul ce qui le devient ensuite déclenche les scènes. Ce qui a été
+annoncé est gardé dans les données de l'intégration : un redémarrage ne
+l'annonce pas une deuxième fois.
 
-Ajoutez le widget **État de la démo** à un tableau de bord : il affiche en
-direct la température de la station météo et la puissance de la prise du
-bureau, la connexion utilisée par la prise (en orange si dégradée) et la
-position observée. Son bouton **Identifier la lampe** fait se signaler la
-lampe de démonstration.
+### Actions
+
+- **Consommer un produit Grocy** : retire une quantité du stock. Le produit est
+  trouvé par son nom (sans tenir compte des majuscules ni des accents ; une
+  partie du nom suffit quand un seul produit la contient) ou par son
+  code-barres. Cochez _Jeté (périmé)_ pour l'enregistrer comme gaspillé.
+  Renvoie le produit, la quantité consommée et la quantité restante en stock.
+- **Ajouter à la liste de courses Grocy** : le produit portant exactement ce
+  nom, ou une ligne de texte libre si aucun produit ne le porte (jamais un
+  autre produit). Remarque facultative. Renvoie l'article, s'il s'agit d'un
+  produit connu, et le nombre d'articles sur la liste.
+- **Marquer une tâche ménagère Grocy comme faite** : enregistre une exécution
+  de la tâche maintenant. Renvoie la tâche et sa prochaine échéance.
+- **Marquer une pile Grocy comme rechargée** : enregistre un cycle de charge
+  maintenant. Renvoie la pile et sa prochaine charge.
+
+Chaque action s'annule depuis Grocy (journal du stock, journaux des tâches
+ménagères et des piles, liste de courses). Rien n'est jamais supprimé.
+
+### Idées de scènes
+
+- L'aspirateur robot retourne à sa base → **Marquer une tâche ménagère Grocy
+  comme faite** « Passer l'aspirateur au salon ».
+- **Un produit va périmer**, quand _Périmé (date limite passée)_ → envoyer
+  « Jetez le {{product}} » à la famille.
+- Chaque soir à 20 h, si _Tâches ménagères en retard_ est supérieur à 0 → un
+  message, et la liste _À faire aujourd'hui_ sur la tablette de la cuisine.
+- Un bouton près du frigo → **Ajouter à la liste de courses Grocy** « Lait ».
+
+## Fréquence de lecture de Grocy
+
+À chaque rafraîchissement (toutes les minutes par défaut), l'intégration pose
+une seule petite question à Grocy : la base a-t-elle changé ? Tout est relu
+seulement si c'est le cas, au changement de jour, et toutes les 15 minutes ;
+entre-temps, ce qui est dû est recalculé d'après la dernière lecture et
+l'horloge de Grocy. Une commande (action, bouton) relit Grocy aussitôt après.
+Grocy n'impose aucun quota de requêtes ; la charge d'un NAS reste négligeable.
+Les compteurs ne sont envoyés à Gladys que lorsqu'ils changent, et une fois
+toutes les 6 heures sinon.
 
 ## Dépannage
 
-L'intégration journalise tout ce qu'elle fait : consultez les logs de
-l'intégration depuis l'interface Gladys (ou `docker logs` sur l'hôte) avec
-`LOG_LEVEL=debug` pour le détail complet.
+- **« Clé d'API refusée »** : la clé a été supprimée ou mal recopiée. Créez-en
+  une nouvelle dans Grocy (**Gérer les clefs API**) et collez-la à nouveau.
+- **« Grocy ne répond pas »** : vérifiez l'adresse et le port depuis un
+  navigateur sur le même réseau que Gladys. Sous Docker, `localhost` désigne le
+  conteneur de l'intégration, pas votre serveur : utilisez l'adresse IP du
+  serveur.
+- **« Aucune API Grocy à cette adresse »** : l'adresse ouvre autre chose que
+  Grocy (une page de NAS, un proxy inverse), ou il manque le sous-dossier de
+  Grocy.
+- **« Certificat refusé »** : cochez **Accepter les certificats auto-signés**.
+- **« L'adresse redirige »** : saisissez directement l'adresse en `https://`.
+- **Un nom introuvable** dans une action : tapez le nom tel que Grocy
+  l'affiche, ou une partie unique de ce nom ; un code-barres marche pour les
+  produits.
+- **La journée change à la mauvaise heure** : l'intégration suit l'horloge de
+  Grocy (`/api/system/time`). Vérifiez le fuseau horaire du serveur de Grocy.
+- Journaux détaillés : passez la variable `LOG_LEVEL` du conteneur à `debug`.
+  La clé d'API n'apparaît jamais dans les journaux.
+
+## Limites
+
+- Développée sans Grocy en fonctionnement : construite sur la spécification de
+  Grocy et sur des réponses enregistrées d'un vrai Grocy.
+- Un seul Grocy par Gladys. Une seule liste de courses (choisie dans la
+  configuration).
+- Les noms des produits et des tâches se tapent dans les scènes : Gladys ne
+  peut pas les proposer dans une liste.
+- Les boutons du widget et les compteurs agissent au nom de l'utilisateur qui
+  possède la clé d'API.
+- Les quantités des actions sont des nombres entiers, dans l'unité de stock du
+  produit.
+- Les recettes, les menus et les équipements ne sont pas pris en charge.
+
+Grocy est une marque de ses auteurs. Cette intégration n'est pas affiliée au
+projet Grocy.

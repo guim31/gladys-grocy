@@ -1,0 +1,17 @@
+{
+  "source": "pygrocy test/cassettes/test_battery/TestBattery.test_charge_battery.yaml",
+  "method": "POST",
+  "path": "/api/batteries/1/charge",
+  "request": {
+    "tracked_time": "2022-04-22T08:40:12.632543+00:00"
+  },
+  "status": 200,
+  "body": {
+    "id": "11",
+    "battery_id": "1",
+    "tracked_time": "2022-04-22 09:40:13",
+    "undone": "0",
+    "undone_timestamp": null,
+    "row_created_timestamp": "2022-04-22 08:40:13"
+  }
+}

@@ -30,6 +30,27 @@ Gladys before reporting a problem.
 
 In scope: the code of this repository and the Docker image it publishes.
 
+What the integration handles:
+
+- **Secrets**: the Grocy API key is a `secret` field of the Gladys
+  configuration. The integration reads it from Gladys at startup, keeps it in
+  memory, sends it only to the Grocy address of the configuration (in the
+  `GROCY-API-KEY` header), and never writes it to `/data` nor to the logs. It
+  acts with the rights of the Grocy user who owns the key: a dedicated user is
+  a good idea.
+- **Stored in `/data`**: `grocy-state.json`, the products and chores already
+  announced to the scenes (Grocy ids and dates, no names) and the address of
+  the Grocy they belong to. Nothing else.
+- **Network**: requests go only to the Grocy address typed in the
+  configuration, on the local network, in HTTP or HTTPS. HTTPS certificates
+  are verified unless the user ticks "Accept self-signed certificates"; no
+  redirect is followed; the integration opens no port and calls no cloud
+  service.
+- **Writes to Grocy**: only the scene actions and widget buttons write
+  (consume, add to the shopping list, track a chore or a charge cycle,
+  complete a task), each one undone from Grocy. Nothing is deleted.
+
 Out of scope: Gladys Assistant itself (see its
 [security policy](https://github.com/GladysAssistant/Gladys/security/policy)),
-and the third-party services and devices the integration talks to.
+Grocy itself (see its [repository](https://github.com/grocy/grocy)), and the
+other devices and services of your network.

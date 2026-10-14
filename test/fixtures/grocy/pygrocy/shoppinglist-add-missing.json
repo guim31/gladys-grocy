@@ -1,0 +1,10 @@
+{
+  "source": "pygrocy test/cassettes/test_shoppinglist/TestShoppingList.test_add_missing_product_to_shopping_list_valid.yaml",
+  "method": "POST",
+  "path": "/api/stock/shoppinglist/add-missing-products",
+  "request": {
+    "list_id": 1
+  },
+  "status": 204,
+  "body": null
+}

@@ -1,0 +1,10 @@
+{
+  "source": "pygrocy test/cassettes/test_system/TestSystem.test_get_last_db_changed_valid.yaml",
+  "method": "GET",
+  "path": "/api/system/db-changed-time",
+  "request": null,
+  "status": 200,
+  "body": {
+    "changed_time": "2022-04-22 09:40:24"
+  }
+}

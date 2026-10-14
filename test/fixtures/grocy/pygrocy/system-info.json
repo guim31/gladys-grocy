@@ -1,0 +1,17 @@
+{
+  "source": "pygrocy test/cassettes/test_system/TestSystem.test_get_system_info_valid.yaml",
+  "method": "GET",
+  "path": "/api/system/info",
+  "request": null,
+  "status": 200,
+  "body": {
+    "grocy_version": {
+      "Version": "3.3.1",
+      "ReleaseDate": "2022-06-10"
+    },
+    "php_version": "8.0.20",
+    "sqlite_version": "3.38.5",
+    "os": "Linux 5.10.0-15-amd64 #1 SMP Debian 5.10.120-1 (2022-06-09) x86_64",
+    "client": "python-requests/2.28.0"
+  }
+}

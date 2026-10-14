@@ -1,41 +1,35 @@
 // -----------------------------------------------------------------------------
-// Scene actions (SDK v0.14+, Gladys 5.1+).
+// Scene action handlers (manifest `scene_actions`, Gladys 5.1+).
 //
-// A scene action is an OPERATION a scene author places in a scene, with
-// parameters and a result: "identify this device", "take a snapshot", "clean
-// these rooms". Each one is declared in the manifest `scene_actions` field
-// (key, label, `fields` in the config_schema grammar, scalar `outputs`) and
-// handled here, keyed by that same `key`; index.js registers every entry with
-// `gladys.onSceneAction(key, ...)`.
+// The four everyday gestures of Grocy, so a button, a voice command or a
+// presence can do them: consume a product ("the last yogurt is eaten"), put
+// something on the shopping list, mark a chore as done ("the vacuum ran" →
+// the vacuuming chore is tracked), mark a battery as charged. Each one is
+// undone from the Grocy interface (journals, shopping list): nothing is
+// deleted.
 //
-// Scene TRIGGERS are the other direction ("this happened"): they are fired by
-// the device that observes the event, see src/devices/motionSensor.js.
-//
-// The rules that matter:
-//   - `fields` arrive RESOLVED: scene variables substituted, defaults applied,
-//     validated by the core; a `"source": "devices"` field is the chosen
-//     device external_id;
-//   - resolve an object of the declared `outputs` (scalars only), readable by
-//     the following actions of the scene, or `undefined` for none. Keys not
-//     declared in the manifest are dropped by the core;
-//   - throwing fails THIS action only: the scene logs it and continues. A
-//     scene action is never a condition: return an output and let the scene
-//     author gate on it;
-//   - never fire a scene event as a consequence of a received action: a scene
-//     bound to that event would loop through the integration.
+// Names are typed by the scene author (Gladys offers no dynamic list of
+// Grocy's products or chores): matched without case or accents, and a part of
+// a name is enough when only one name contains it. Gladys applies the field
+// defaults to scene actions.
 // -----------------------------------------------------------------------------
 
-import { createLogger } from '@gladysassistant/integration-sdk';
-import { signalDevice } from './devices/index.js';
-
-const logger = createLogger({ name: 'scenes' });
+const yes = (value) => value === true || value === 'true' || value === 1 || value === '1';
 
 export const SCENE_ACTIONS = {
-  // The ack is awaited under the action's `timeout_seconds` (15 s in the
-  // manifest), counted from the moment the scene reaches the action.
-  async identify_device(gladys, { fields, config }) {
-    logger.info(`Scene action identify_device <- ${fields.device}`);
-    const signalled = await signalDevice(gladys, fields.device, config);
-    return { signalled };
+  async consume_product(hub, { fields = {} }) {
+    return hub.consumeProduct(fields.product, fields.amount, { spoiled: yes(fields.spoiled) });
+  },
+
+  async add_to_shopping_list(hub, { fields = {} }) {
+    return hub.addToShoppingList(fields.item, fields.amount, fields.note);
+  },
+
+  async execute_chore(hub, { fields = {} }) {
+    return hub.executeChore({ name: fields.chore });
+  },
+
+  async charge_battery(hub, { fields = {} }) {
+    return hub.chargeBattery({ name: fields.battery });
   },
 };

@@ -1,0 +1,14 @@
+{
+  "source": "pygrocy test/cassettes/test_grocy/TestGrocy.test_consume_product_by_barcode_error.yaml",
+  "method": "POST",
+  "path": "/api/stock/products/by-barcode/555/consume",
+  "request": {
+    "amount": 1,
+    "spoiled": false,
+    "transaction_type": "consume"
+  },
+  "status": 400,
+  "body": {
+    "error_message": "No product with barcode 555 found"
+  }
+}

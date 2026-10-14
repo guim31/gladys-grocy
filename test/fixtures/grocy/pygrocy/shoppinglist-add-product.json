@@ -1,0 +1,12 @@
+{
+  "source": "pygrocy test/cassettes/test_shoppinglist/TestShoppingList.test_add_product_to_shopping_list_valid.yaml",
+  "method": "POST",
+  "path": "/api/stock/shoppinglist/add-product",
+  "request": {
+    "product_id": 19,
+    "list_id": null,
+    "product_amount": null
+  },
+  "status": 204,
+  "body": null
+}
